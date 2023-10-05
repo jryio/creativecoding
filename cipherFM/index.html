@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title></title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      max-width: 25%;
+      margin-top: 10rem;
+      margin-right: auto;
+      margin-left: auto;
+    }
+
+    #histogram {
+      height: 200px;
+      width: 100%;
+      border: 1px solid black;
+      display: flex;
+      flex-direction: row;
+      overflow-x: clip;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <label id="label" for="frequency">
+      Frequency:
+    </label>
+    <input id="frequency" type="range" name="frequency" value="" min="88.0" max="108.0">
+
+
+  </div>
+  <div id="histogram">
+
+  </div>
+
+
+
+  <script text="text/javascript" src="index.js"> </script>
+</body>
+
+</html>
