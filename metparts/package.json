@@ -1,0 +1,14 @@
+{
+  "name": "metparts",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "watch": "open index.html && bun build index.ts --outfile index.js --watch"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
