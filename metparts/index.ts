@@ -5,6 +5,17 @@ const BASE_URL = "https://collectionapi.metmuseum.org";
 const ENDPOINT_OBJECTS = "/public/collection/v1/objects";
 const EUROPEAN_PAINTINGS = "11";
 
+// 7 possilbe pieces
+const ORIGINS = [
+  "15% 15%",
+  "15% 75%",
+  "75% 15%",
+  "75% 75%",
+  "15%",
+  "75%",
+  "center",
+];
+
 type MetObjects = {
   total: number;
   objectIDs: Array<number>;
@@ -17,6 +28,7 @@ type MetObject = {
 // GLOBAL STATE
 let selected: Array<{ id: number; src: string; elem: HTMLImageElement }> = [];
 
+// FETCH
 async function fetchPaintings(): Promise<Array<number>> {
   const url = BASE_URL + ENDPOINT_OBJECTS;
   const params = new URLSearchParams({
@@ -27,7 +39,6 @@ async function fetchPaintings(): Promise<Array<number>> {
   });
 
   const json: MetObjects = await response.json();
-  console.log({ json });
   return json.objectIDs;
 }
 
@@ -38,12 +49,10 @@ async function fetchSinglePainting(id: number) {
   });
   const json: MetObject = await response.json();
 
-  console.log({ json });
-
   return json.primaryImageSmall;
 }
 
-/* Randomize array in-place using Durstenfeld shuffle algorithm */
+// Randomize array in-place using Durstenfeld shuffle algorithm
 function shuffleArray(array: Array<any>) {
   for (var i = array.length - 1; i > 0; i--) {
     var j = Math.floor(Math.random() * (i + 1));
@@ -54,39 +63,28 @@ function shuffleArray(array: Array<any>) {
 }
 
 const appendImg = (node: HTMLDivElement) => {
-  const container = document.getElementById("image-container");
+  const container = document.getElementById("game-container");
   if (!container) {
     return;
   }
   container.appendChild(node);
 };
 
-const createImg = (url: string) => {
-  // 7 possilbe pieces
-  const origins = [
-    "top left",
-    "top right",
-    "bottom left",
-    "bottom right",
-    "left",
-    "right",
-    "center",
-  ];
-  return origins.map((origin, index) => {
+const createImg = (url: string): Array<HTMLDivElement> => {
+  return ORIGINS.map((origin, index) => {
     const container: HTMLDivElement = document.createElement("div");
     container.classList.add("image-container");
 
     // Create multiple images of the same SRC, each one zoomed in
     const img: HTMLImageElement = document.createElement("img");
-    console.log({ url });
     img.src = url;
     img.id = String(index);
 
-    img.height = 100;
-    img.width = 100;
+    img.height = 175;
+    img.width = 175;
 
     img.classList.add("image");
-    img.style.transform = `scale(6)`;
+    img.style.transform = `scale(4)`;
     img.style.transformOrigin = origin;
 
     img.addEventListener("click", createClickHandler(url));
@@ -101,9 +99,7 @@ const randomObjects = (list: Array<number>, count: number) => {
     { length: count },
     () => Math.floor(Math.random() * list.length),
   );
-  console.log({ random });
   const ids = random.map((r) => list[r]);
-  console.log({ ids });
   return ids;
 };
 
@@ -119,7 +115,6 @@ const createClickHandler = (src: string) => {
 
       // Image is already selected, de-select it and remove it from the list
       console.log(parent.classList);
-      console.log({ selected });
       if (
         parent.classList.contains("image-selected") ||
         parent.classList.contains("image-correct")
@@ -143,6 +138,8 @@ const createClickHandler = (src: string) => {
         (!parent.classList.contains("image-selected") &&
           !parent.classList.contains("image-selected"))
       ) {
+        selected.push({ id: Number(targetID), src: targetSrc, elem: target });
+        console.log({ selected });
         parent.classList.add("image-selected");
         if (
           targetSrc === src &&
@@ -150,6 +147,7 @@ const createClickHandler = (src: string) => {
           selected.every(({ src }) => targetSrc === src) &&
           selected.length >= 7
         ) {
+          console.log("YOU WON");
           parent.classList.add("image-correct");
           for (const x of selected) {
             const elem = x.elem;
@@ -159,7 +157,6 @@ const createClickHandler = (src: string) => {
             }
           }
         }
-        selected.push({ id: Number(targetID), src: targetSrc, elem: target });
       }
     }
   };
@@ -169,13 +166,16 @@ const createClickHandler = (src: string) => {
 // MAIN
 (async () => {
   try {
+    // PRE RENDER
+    // FETCH
     const objectIDs = await fetchPaintings();
     const randomIDs = randomObjects(objectIDs, 10);
     const objectImgs = await Promise.all(
       randomIDs.map(fetchSinglePainting),
     );
 
-    const nodes = objectImgs.filter((x) => x !== "").flatMap(createImg);
+    const urls = objectImgs.filter((x) => x !== "");
+    const nodes = urls.flatMap(createImg);
     shuffleArray(nodes);
     nodes.map(appendImg);
     console.log({ randomIDs });

@@ -8,7 +8,6 @@ async function fetchPaintings() {
     method: "GET"
   });
   const json = await response.json();
-  console.log({ json });
   return json.objectIDs;
 }
 async function fetchSinglePainting(id) {
@@ -17,7 +16,6 @@ async function fetchSinglePainting(id) {
     method: "GET"
   });
   const json = await response.json();
-  console.log({ json });
   return json.primaryImageSmall;
 }
 var shuffleArray = function(array) {
@@ -31,35 +29,34 @@ var shuffleArray = function(array) {
 var BASE_URL = "https://collectionapi.metmuseum.org";
 var ENDPOINT_OBJECTS = "/public/collection/v1/objects";
 var EUROPEAN_PAINTINGS = "11";
+var ORIGINS = [
+  "15% 15%",
+  "15% 75%",
+  "75% 15%",
+  "75% 75%",
+  "15%",
+  "75%",
+  "center"
+];
 var selected = [];
 var appendImg = (node) => {
-  const container = document.getElementById("image-container");
+  const container = document.getElementById("game-container");
   if (!container) {
     return;
   }
   container.appendChild(node);
 };
 var createImg = (url) => {
-  const origins = [
-    "top left",
-    "top right",
-    "bottom left",
-    "bottom right",
-    "left",
-    "right",
-    "center"
-  ];
-  return origins.map((origin, index) => {
+  return ORIGINS.map((origin, index) => {
     const container = document.createElement("div");
     container.classList.add("image-container");
     const img = document.createElement("img");
-    console.log({ url });
     img.src = url;
     img.id = String(index);
-    img.height = 100;
-    img.width = 100;
+    img.height = 175;
+    img.width = 175;
     img.classList.add("image");
-    img.style.transform = `scale(6)`;
+    img.style.transform = `scale(4)`;
     img.style.transformOrigin = origin;
     img.addEventListener("click", createClickHandler(url));
     container.appendChild(img);
@@ -68,9 +65,7 @@ var createImg = (url) => {
 };
 var randomObjects = (list, count) => {
   const random = Array.from({ length: count }, () => Math.floor(Math.random() * list.length));
-  console.log({ random });
   const ids = random.map((r) => list[r]);
-  console.log({ ids });
   return ids;
 };
 var createClickHandler = (src) => {
@@ -83,7 +78,6 @@ var createClickHandler = (src) => {
       if (!parent)
         return;
       console.log(parent.classList);
-      console.log({ selected });
       if (parent.classList.contains("image-selected") || parent.classList.contains("image-correct")) {
         parent.classList.remove("image-selected");
         parent.classList.remove("image-correct");
@@ -98,8 +92,11 @@ var createClickHandler = (src) => {
         return;
       }
       if (!parent.classList.contains("image-selected") && !parent.classList.contains("image-selected")) {
+        selected.push({ id: Number(targetID), src: targetSrc, elem: target });
+        console.log({ selected });
         parent.classList.add("image-selected");
         if (targetSrc === src && selected.length > 0 && selected.every(({ src: src2 }) => targetSrc === src2) && selected.length >= 7) {
+          console.log("YOU WON");
           parent.classList.add("image-correct");
           for (const x of selected) {
             const elem = x.elem;
@@ -109,7 +106,6 @@ var createClickHandler = (src) => {
             }
           }
         }
-        selected.push({ id: Number(targetID), src: targetSrc, elem: target });
       }
     }
   };
@@ -120,7 +116,8 @@ var createClickHandler = (src) => {
     const objectIDs = await fetchPaintings();
     const randomIDs = randomObjects(objectIDs, 10);
     const objectImgs = await Promise.all(randomIDs.map(fetchSinglePainting));
-    const nodes = objectImgs.filter((x) => x !== "").flatMap(createImg);
+    const urls = objectImgs.filter((x) => x !== "");
+    const nodes = urls.flatMap(createImg);
     shuffleArray(nodes);
     nodes.map(appendImg);
     console.log({ randomIDs });
