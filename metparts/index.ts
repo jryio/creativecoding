@@ -1,11 +1,15 @@
 /// <reference lib="dom" />
 /// <reference lib="dom.iterable" />
 
-const BASE_URL = "https://collectionapi.metmuseum.org";
-const ENDPOINT_OBJECTS = "/public/collection/v1/objects";
-const EUROPEAN_PAINTINGS = "11";
+import { fetchPaintings, fetchSinglePainting } from "./fetch.ts";
+import { GAME } from "./game.ts";
 
-// 7 possilbe pieces
+// TODO: pre render the boxes for the images
+// TODO: Style the header text
+
+const CONTAINER = document.getElementById("game-container");
+const NUM_PAINTINGS = 10;
+// 7 possilbe pieces for each painting
 const ORIGINS = [
   "15% 15%",
   "15% 75%",
@@ -16,41 +20,8 @@ const ORIGINS = [
   "center",
 ];
 
-type MetObjects = {
-  total: number;
-  objectIDs: Array<number>;
-};
-
-type MetObject = {
-  primaryImageSmall: string;
-};
-
 // GLOBAL STATE
 let selected: Array<{ id: number; src: string; elem: HTMLImageElement }> = [];
-
-// FETCH
-async function fetchPaintings(): Promise<Array<number>> {
-  const url = BASE_URL + ENDPOINT_OBJECTS;
-  const params = new URLSearchParams({
-    departmentIds: EUROPEAN_PAINTINGS,
-  });
-  const response = await fetch(url + "?" + params, {
-    method: "GET",
-  });
-
-  const json: MetObjects = await response.json();
-  return json.objectIDs;
-}
-
-async function fetchSinglePainting(id: number) {
-  const url = BASE_URL + ENDPOINT_OBJECTS + "/" + id;
-  const response = await fetch(url, {
-    method: "GET",
-  });
-  const json: MetObject = await response.json();
-
-  return json.primaryImageSmall;
-}
 
 // Randomize array in-place using Durstenfeld shuffle algorithm
 function shuffleArray(array: Array<any>) {
@@ -63,11 +34,10 @@ function shuffleArray(array: Array<any>) {
 }
 
 const appendImg = (node: HTMLDivElement) => {
-  const container = document.getElementById("game-container");
-  if (!container) {
+  if (!CONTAINER) {
     return;
   }
-  container.appendChild(node);
+  CONTAINER.appendChild(node);
 };
 
 const createImg = (url: string): Array<HTMLDivElement> => {
@@ -104,72 +74,32 @@ const randomObjects = (list: Array<number>, count: number) => {
 };
 
 const createClickHandler = (src: string) => {
-  const handler = (event: Event) => {
+  // Return a new handler function for each image
+  return (event: Event) => {
     if (event.target instanceof HTMLImageElement) {
       const target = event.target;
       const targetSrc = event.target.src;
       const targetID = event.target.id;
-
       const parent = target.parentElement;
       if (!parent) return;
 
-      // Image is already selected, de-select it and remove it from the list
-      console.log(parent.classList);
-      if (
-        parent.classList.contains("image-selected") ||
-        parent.classList.contains("image-correct")
-      ) {
-        parent.classList.remove("image-selected");
-        parent.classList.remove("image-correct");
-
-        selected = selected.filter((x) => {
-          if (x) {
-            const { id, src } = x;
-            return !(Number(targetID) === id && targetSrc === src);
-          }
-          return true;
-        });
-        console.log("AFTER REMOVE ", { selected });
-        return;
-      }
-
-      // Image is not already selected
-      if (
-        (!parent.classList.contains("image-selected") &&
-          !parent.classList.contains("image-selected"))
-      ) {
-        selected.push({ id: Number(targetID), src: targetSrc, elem: target });
-        console.log({ selected });
-        parent.classList.add("image-selected");
-        if (
-          targetSrc === src &&
-          selected.length > 0 &&
-          selected.every(({ src }) => targetSrc === src) &&
-          selected.length >= 7
-        ) {
-          console.log("YOU WON");
-          parent.classList.add("image-correct");
-          for (const x of selected) {
-            const elem = x.elem;
-            const p = elem.parentElement;
-            if (p !== null && elem.src === targetSrc) {
-              p.classList.add("image-correct");
-            }
-          }
-        }
-      }
+      // TOGGLE IMAGE
+      GAME.toggleImage(src, target, targetSrc, targetID, parent);
     }
   };
-  return handler;
 };
 
 // MAIN
 (async () => {
   try {
-    // PRE RENDER
+    // WELCOME SCREEN
+    await GAME.renderWelcomeScreen();
+
     // FETCH
+    // TODO: Store detailed information about the artwork and display upon
+    // successfully identifying a paiting (correct guesses)
     const objectIDs = await fetchPaintings();
-    const randomIDs = randomObjects(objectIDs, 10);
+    const randomIDs = randomObjects(objectIDs, NUM_PAINTINGS);
     const objectImgs = await Promise.all(
       randomIDs.map(fetchSinglePainting),
     );
@@ -177,11 +107,12 @@ const createClickHandler = (src: string) => {
     const urls = objectImgs.filter((x) => x !== "");
     const nodes = urls.flatMap(createImg);
     shuffleArray(nodes);
+
+    // WAIT HERE UNTIL PLAY BUTTON IS CLICKED
     nodes.map(appendImg);
-    console.log({ randomIDs });
-    console.log({ objectImgs });
-    console.log({ nodes });
-  } catch (e) {
-    // Deal with the fact the chain failed
+  } catch (_e) {
+    console.error(
+      "Something went wrong while trying to start the game, sorry!",
+    );
   }
 })();
