@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+    width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  #welcome {
+    @apply flex flex-col max-w-4xl my-4 mx-auto;
+  }
+
+  #game-container {
+    display: grid;
+    grid-template: repeat(auto-fit, 150px) / repeat(auto-fit, 150px);
+    grid-gap: 10px;
+
+    /* flex-direction: row; */
+    /* flex-wrap: wrap; */
+    /* justify-content: space-evenly; */
+    height: 100%;
+    width: 100%;
+  }
+
+  #play-button {
+    @apply justify-self-center;
+  }
+
+  #score {
+    @apply text-center;
+  }
+
+  .image {
+    overflow: hidden;
+  }
+
+  .image-container {
+    display: inline-block;
+    position: relative;
+    overflow: hidden;
+    height: 150px;
+    width: 150px;
+    border: 1px solid black;
+    box-sizing: border-box;
+  }
+
+  .image-selected {
+    border: 4px solid orange;
+  }
+
+  .image-correct {
+    border: 4px solid green !important;
+  }
+}
+
+@layer utilities {
+  .yellow {
+    @apply text-yellow-400;
+  }
+
+  .orange {
+    @apply text-orange-400;
+  }
+
+  .red {
+    @apply text-rose-600;
+  }
+}

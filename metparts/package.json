@@ -3,12 +3,19 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "watch": "open index.html && bun build index.ts --outfile index.js --watch"
+    "watch": "open index.html && bun build index.ts --outfile index.js --watch",
+    "tw": "bun run tailwindcss -i input.css -o style.css -c tailwind.config.js -m --watch"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "@tailwindcss/typography": "^0.5.10",
+    "bun-types": "latest",
+    "tailwindcss": "^3.3.3"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "daisyui": "latest",
+    "update-browserslist-db": "latest"
   }
 }

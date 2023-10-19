@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 
 <head>
   <title></title>
@@ -10,11 +10,26 @@
 
 </head>
 
-<body>
+<body class="prose max-w-full">
 
-  <div id="score">12 Guesses remining</div>
+  <!-- Welcome text container -->
+  <div id="welcome"> </div>
 
-  <div id="game-container"> </div>
+  <!-- Game score -->
+  <h3 id="score" hidden="true">12 Guesses remining</h3>
+
+  <!-- Images -->
+  <div id="game-container">
+  </div>
+
+  <!-- Correct image modal -->
+  <dialog id="painting-modal" class="modal">
+    <div class="modal-box mx-auto">
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
 
   <script text="text/javascript" src="index.js"> </script>
 </body>

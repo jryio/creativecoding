@@ -9,7 +9,13 @@ type MetObjects = {
 
 type MetObject = {
   primaryImageSmall: string;
+  title: string;
+  artistDisplayName: string;
+  objectDate: string;
 };
+
+// GLOBAL
+export let MET: { [src: string]: MetObject } = {};
 
 // FETCH
 export async function fetchPaintings(): Promise<Array<number>> {
@@ -32,6 +38,11 @@ export async function fetchSinglePainting(id: number) {
     method: "GET",
   });
   const json: MetObject = await response.json();
+  console.log({ metObject: json });
+
+  if (json.primaryImageSmall !== "") {
+    MET[json.primaryImageSmall] = json;
+  }
 
   return json.primaryImageSmall;
 }

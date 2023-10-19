@@ -93,7 +93,7 @@ const createClickHandler = (src: string) => {
 (async () => {
   try {
     // WELCOME SCREEN
-    await GAME.renderWelcomeScreen();
+    const play = GAME.renderWelcomeScreen();
 
     // FETCH
     // TODO: Store detailed information about the artwork and display upon
@@ -109,6 +109,8 @@ const createClickHandler = (src: string) => {
     shuffleArray(nodes);
 
     // WAIT HERE UNTIL PLAY BUTTON IS CLICKED
+    console.log({ nodes });
+    await play;
     nodes.map(appendImg);
   } catch (_e) {
     console.error(

@@ -16,11 +16,16 @@ async function fetchSinglePainting(id) {
     method: "GET"
   });
   const json = await response.json();
+  console.log({ metObject: json });
+  if (json.primaryImageSmall !== "") {
+    MET[json.primaryImageSmall] = json;
+  }
   return json.primaryImageSmall;
 }
 var BASE_URL = "https://collectionapi.metmuseum.org";
 var ENDPOINT_OBJECTS = "/public/collection/v1/objects";
 var EUROPEAN_PAINTINGS = "11";
+var MET = {};
 
 // game.ts
 var GUESSES_LIMIT = 12;
@@ -28,8 +33,16 @@ var GUESSES_REFRESH = 6;
 var SELECTED = "image-selected";
 var CORRECT = "image-correct";
 var COMPLETED = "image-completed";
+var PLAY_ID = "play-button";
+var WELCOME_ID = "welcome";
 var SCORE_ID = "score";
-var $BODY = document.body;
+var PAINTING_MODAL_ID = "painting-modal";
+var YELLOW = "yellow";
+var ORANGE = "orange";
+var RED = "red";
+var COLORS = ["yellow", "orange", "red"];
+var $MODAL = document.getElementById(PAINTING_MODAL_ID);
+var $WELCOME = document.getElementById(WELCOME_ID);
 var $SCORE = document.getElementById(SCORE_ID);
 var GAME = {
   remaining: GUESSES_LIMIT,
@@ -38,34 +51,41 @@ var GAME = {
     const self = this;
     const playButton = document.createElement("button");
     playButton.type = "button";
-    playButton.id = "play-button";
+    playButton.id = PLAY_ID;
+    playButton.classList.add("btn");
     playButton.textContent = "Play!";
-    let x = document.createElement("h1");
-    let y = document.createElement("h1");
-    let z = document.createElement("h1");
+    const x = document.createElement("h1");
+    const y = document.createElement("h1");
+    const z = document.createElement("h1");
     x.textContent = "Oh no! The Met Museum put all their paintings into the shredder";
     y.textContent = "It's your job to put the pieces back together again";
-    z.textContent = "Each Artwork is divided into 7 non-contiguous pieces. Find them al";
+    z.textContent = "Each Artwork is divided into 7 non-contiguous pieces. Find them all!";
     const welcome = [
       x,
       y,
       z,
       playButton
     ];
-    $BODY.prepend(...welcome);
+    if (!$WELCOME)
+      return;
+    $WELCOME.prepend(...welcome);
     return new Promise((resolve) => {
       const clearHandler = self.clearWelcomeScreen(welcome);
       playButton.addEventListener("click", () => {
+        $SCORE.hidden = false;
         clearHandler();
         resolve();
       });
     });
   },
   clearWelcomeScreen(nodes) {
-    return () => nodes.forEach((elem) => $BODY.removeChild(elem));
+    return () => nodes.forEach((elem) => $WELCOME.removeChild(elem));
   },
   toggleImage(src, target, targetSrc, targetID, parent) {
     const self = this;
+    if (self.didLose()) {
+      return;
+    }
     if (self.isSelected(parent.classList)) {
       self.classDeselect(parent.classList);
       self.removeSelected(Number(targetID), targetSrc);
@@ -76,11 +96,12 @@ var GAME = {
       if (self.didWin(src, targetSrc)) {
         self.classCorrect(parent.classList);
         self.setAllCorrect(targetSrc);
+        self.showPaintingModal(targetSrc);
       }
     }
     self.updateScore();
     if (self.didLose()) {
-      alert("You lost!");
+      alert("You ruined the paintings! Great, now they're unrecoverable");
     }
   },
   updateScore() {
@@ -88,6 +109,14 @@ var GAME = {
       return;
     const self = this;
     $SCORE.textContent = `${self.remaining} guesses remaining`;
+    $SCORE.classList.remove(...COLORS);
+    if (self.remaining >= 8 && self.remaining <= 10) {
+      $SCORE.classList.add(YELLOW);
+    } else if (self.remaining >= 5 && self.remaining <= 7) {
+      $SCORE.classList.add(ORANGE);
+    } else if (self.remaining <= 4) {
+      $SCORE.classList.add(RED);
+    }
   },
   addSelected(id, src, elem) {
     const self = this;
@@ -121,6 +150,34 @@ var GAME = {
   didWin(src, targetSrc) {
     const self = this;
     return targetSrc === src && self.selected.every(({ src: src2 }) => targetSrc === src2) && self.selected.length === 7;
+  },
+  showPaintingModal(src) {
+    if (!$MODAL)
+      return;
+    const meta = MET[src];
+    const $title = document.createElement("h2");
+    const $img = document.createElement("img");
+    $title.textContent = `${meta.title} by ${meta.artistDisplayName} ${meta.objectDate !== "" ? `- ${meta.objectDate}` : ""}`;
+    $title.classList.add("text-center");
+    $img.height = 300;
+    $img.width = 300;
+    $img.src = src;
+    $img.classList.add("mx-auto");
+    const children = [
+      $title,
+      $img
+    ];
+    const $BOX = $MODAL.children.item(0);
+    if (!$BOX)
+      return;
+    children.forEach((x) => $BOX.appendChild(x));
+    $MODAL.classList.add("modal-open");
+    const $FORM = document.getElementsByClassName("modal-backdrop").item(0);
+    if (!$FORM)
+      return;
+    $FORM.addEventListener("submit", () => {
+      $MODAL.classList.remove("modal-open");
+    });
   },
   didLose() {
     return this.remaining <= 0;
@@ -217,13 +274,15 @@ var createClickHandler = (src) => {
 };
 (async () => {
   try {
-    await GAME.renderWelcomeScreen();
+    const play = GAME.renderWelcomeScreen();
     const objectIDs = await fetchPaintings();
     const randomIDs = randomObjects(objectIDs, NUM_PAINTINGS);
     const objectImgs = await Promise.all(randomIDs.map(fetchSinglePainting));
     const urls = objectImgs.filter((x) => x !== "");
     const nodes = urls.flatMap(createImg);
     shuffleArray(nodes);
+    console.log({ nodes });
+    await play;
     nodes.map(appendImg);
   } catch (_e) {
     console.error("Something went wrong while trying to start the game, sorry!");
